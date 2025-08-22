@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản Đồ Thần Số Học: Nguyễn Trọng Nguyễn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Amber, Teal) -->
+    <!-- Application Structure Plan: A single-page application using a sticky top navigation to switch between thematic sections (Overview, Foundation, Portrait, Roadmap, Action Plan). This tabbed structure breaks down the dense report into manageable, user-driven chunks, prioritizing exploration over linear reading. The Overview acts as a dashboard for at-a-glance insights, with interactive elements like the birth chart and timeline providing deeper dives in their respective sections. This is more user-friendly than a long, scrolling document. -->
+    <!-- Visualization & Content Choices: 1. Key Numbers Dashboard (HTML/CSS Cards): Goal=Inform, presents core numbers instantly. 2. Birth Chart (HTML/CSS Grid): Goal=Organize, visualizes the number distribution. Interaction=Click-to-reveal-info, making it digestible. 3. Energy Balance Radar Chart (Chart.js): Goal=Compare/Analyze, visually represents the core challenge (strong practical skills vs. developing emotional/intuitive side). 4. Pinnacles Timeline (HTML/CSS): Goal=Show Change, maps out life stages interactively. All choices avoid SVG/Mermaid as required and focus on interactive exploration of the report's key concepts. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #292524; /* stone-800 */
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            background-color: #a16207; /* amber-700 */
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: calc(100% - 20px);
+            background-color: #d6d3d1; /* stone-300 */
+        }
+        .timeline-item {
+            position: relative;
+        }
+        .timeline-dot {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #d97706; /* amber-600 */
+            border: 3px solid #f5f5f4; /* stone-100 */
+        }
+        .timeline-content {
+            width: calc(50% - 30px);
+        }
+        .timeline-item:nth-child(even) .timeline-content {
+            float: right;
+            text-align: left;
+        }
+        .timeline-item:nth-child(odd) .timeline-content {
+            float: left;
+            text-align: right;
+        }
+        .timeline-item:nth-child(even)::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            width: 30px;
+            height: 2px;
+            background-color: #d6d3d1; /* stone-300 */
+        }
+        .timeline-item:nth-child(odd)::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 50%;
+            width: 30px;
+            height: 2px;
+            background-color: #d6d3d1; /* stone-300 */
+        }
+        .birth-chart-cell {
+            transition: all 0.2s ease-in-out;
+        }
+        .birth-chart-cell:hover, .birth-chart-cell.selected {
+            transform: scale(1.1);
+            background-color: #f59e0b; /* amber-500 */
+            color: white;
+            cursor: pointer;
+        }
+        .birth-chart-cell.empty {
+            background-color: #e7e5e4; /* stone-200 */
+            color: #a8a29e; /* stone-400 */
+        }
+        .birth-chart-cell.empty:hover {
+            transform: none;
+            cursor: default;
+            background-color: #e7e5e4;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex flex-col sm:flex-row justify-between items-center">
+                <div class="text-center sm:text-left mb-2 sm:mb-0">
+                    <h1 class="text-xl md:text-2xl font-bold text-amber-800">Bản Đồ Thần Số Học</h1>
+                    <p class="text-sm text-stone-600">Nguyễn Trọng Nguyễn - 16/10/1989</p>
+                </div>
+                <nav id="navigation" class="flex flex-wrap justify-center gap-2">
+                    <button data-target="overview" class="nav-button active px-3 py-2 text-sm rounded-md">Tổng Quan</button>
+                    <button data-target="foundation" class="nav-button px-3 py-2 text-sm rounded-md">Nền Tảng</button>
+                    <button data-target="portrait" class="nav-button px-3 py-2 text-sm rounded-md">Chân Dung</button>
+                    <button data-target="roadmap" class="nav-button px-3 py-2 text-sm rounded-md">Lộ Trình</button>
+                    <button data-target="action-plan" class="nav-button px-3 py-2 text-sm rounded-md">Hành Động</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <!-- Section: Overview -->
+        <section id="overview" class="space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-stone-900">Chào mừng Anh Nguyễn Trọng Nguyễn</h2>
+                <p class="mt-2 max-w-3xl mx-auto text-stone-600">Đây là bản đồ tương tác giúp anh khám phá những năng lượng cốt lõi định hình nên con người và con đường của anh. Hãy sử dụng nó như một kim chỉ nam để thực hiện trọn vẹn sứ mệnh cao cả: báo hiếu cha mẹ và nuôi dạy con cái khôn lớn.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Key Number Cards -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="font-semibold text-stone-500">Con Số Chủ Đạo</h3>
+                    <p class="text-5xl font-bold text-amber-700 my-2">8</p>
+                    <p class="text-stone-600">Con đường của người trụ cột kiên cường, đầy quyền lực và tham vọng.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="font-semibold text-stone-500">Chỉ Số Sứ Mệnh</h3>
+                    <p class="text-5xl font-bold text-amber-700 my-2">3</p>
+                    <p class="text-stone-600">Nhiệm vụ lan tỏa niềm vui, sự lạc quan và truyền cảm hứng cho mọi người.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="font-semibold text-stone-500">Chỉ Số Linh Hồn</h3>
+                    <p class="text-5xl font-bold text-amber-700 my-2">22/4</p>
+                    <p class="text-stone-600">Khát vọng của "Bậc Thầy Kiến Tạo", xây dựng di sản vững chắc cho gia đình.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-red-200 bg-red-50">
+                    <h3 class="font-semibold text-red-600">Bài Học Lớn</h3>
+                    <p class="text-2xl font-bold text-red-700 my-2">Mũi Tên Trống 3-5-7</p>
+                    <p class="text-red-600">Thách thức vượt qua sự hoài nghi, vun đắp niềm tin và trí tuệ cảm xúc.</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-center mb-4 text-stone-800">Bản Đồ Năng Lượng Tổng Quan</h3>
+                <p class="text-center text-stone-600 mb-6 max-w-2xl mx-auto">Biểu đồ radar này thể hiện sự phân bổ năng lượng của anh. Nó cho thấy thế mạnh vượt trội về năng lực vật chất và trách nhiệm, đồng thời chỉ ra khu vực cần vun bồi là sự kết nối nội tâm và biểu đạt cảm xúc.</p>
+                <div class="chart-container">
+                    <canvas id="energyBalanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Foundation -->
+        <section id="foundation" class="hidden space-y-8">
+            <h2 class="text-3xl font-bold text-center text-stone-900">Nền Tảng Cuộc Sống: Năng Lượng Bẩm Sinh</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto">Các con số từ ngày sinh 16/10/1989 hé lộ những đặc điểm cốt lõi và bài học nền tảng mà anh mang theo từ khi sinh ra.</p>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-stone-800">Con Số Chủ Đạo 8: Người Trụ Cột Kiên Cường</h3>
+                <p class="mt-2 text-stone-600">Con số 8 là biểu tượng của quyền lực, sự độc lập, tham vọng và sức mạnh vật chất. Anh có tư duy chiến lược, khả năng quản lý tài chính tốt và động lực mạnh mẽ để thành công. Năng lượng này cộng hưởng trực tiếp với vai trò trụ cột gia đình, mang lại sức mạnh để tạo ra một nền tảng an toàn, sung túc cho người thân.</p>
+                <div class="mt-4 border-t pt-4">
+                    <h4 class="font-semibold text-amber-800">Điểm cần lưu ý:</h4>
+                    <ul class="list-disc list-inside text-stone-600 mt-2 space-y-1">
+                        <li>Dễ bị ám ảnh bởi thành công vật chất, cần cân bằng giữa công việc và gia đình.</li>
+                        <li>Sự quyết đoán đôi khi có thể trở thành cứng nhắc, bảo thủ.</li>
+                        <li>Xu hướng thích kiểm soát có thể vô tình gây áp lực cho người thân.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-center mb-4 text-stone-800">Biểu Đồ Ngày Sinh: Bức Tranh Năng Lượng</h3>
+                <p class="text-center text-stone-600 mb-6 max-w-2xl mx-auto">Đây là bản đồ trực quan về các điểm mạnh và thách thức bẩm sinh của anh. Hãy nhấp vào từng con số để khám phá ý nghĩa của chúng.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="max-w-xs mx-auto w-full">
+                        <div class="grid grid-cols-3 gap-2 aspect-square">
+                            <div data-number="3" class="birth-chart-cell empty flex items-center justify-center text-4xl font-bold rounded-lg">3</div>
+                            <div data-number="6" class="birth-chart-cell bg-stone-100 flex items-center justify-center text-4xl font-bold rounded-lg">6</div>
+                            <div data-number="99" class="birth-chart-cell bg-stone-100 flex items-center justify-center text-4xl font-bold rounded-lg">99</div>
+                            <div data-number="2" class="birth-chart-cell empty flex items-center justify-center text-4xl font-bold rounded-lg">2</div>
+                            <div data-number="5" class="birth-chart-cell empty flex items-center justify-center text-4xl font-bold rounded-lg">5</div>
+                            <div data-number="8" class="birth-chart-cell bg-stone-100 flex items-center justify-center text-4xl font-bold rounded-lg">8</div>
+                            <div data-number="111" class="birth-chart-cell bg-stone-100 flex items-center justify-center text-4xl font-bold rounded-lg">111</div>
+                            <div data-number="4" class="birth-chart-cell empty flex items-center justify-center text-4xl font-bold rounded-lg">4</div>
+                            <div data-number="7" class="birth-chart-cell empty flex items-center justify-center text-4xl font-bold rounded-lg">7</div>
+                        </div>
+                    </div>
+                    <div id="birth-chart-info" class="bg-stone-50 p-4 rounded-lg min-h-[200px] border">
+                        <h4 class="font-bold text-lg text-amber-800 mb-2" id="birth-chart-info-title">Chào anh, hãy khám phá!</h4>
+                        <p class="text-stone-700" id="birth-chart-info-text">Chọn một ô số trong biểu đồ để xem luận giải chi tiết về năng lượng của con số đó trong cuộc đời anh.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Portrait -->
+        <section id="portrait" class="hidden space-y-8">
+            <h2 class="text-3xl font-bold text-center text-stone-900">Chân Dung Con Người: Năng Lượng từ Họ Tên</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto">Họ và tên "Nguyễn Trọng Nguyễn" hé mở những khát khao sâu thẳm, cách anh thể hiện ra bên ngoài và sứ mệnh mà anh được giao phó.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="text-xl font-bold text-amber-800">Linh Hồn 22/4: Bậc Thầy Kiến Tạo</h3>
+                    <p class="mt-2 text-stone-600">Khát khao sâu thẳm nhất của anh là kiến tạo nên một "di sản" - một gia đình có nền tảng vững chắc, một tổ ấm hạnh phúc nơi các giá trị tốt đẹp được vun trồng và lưu truyền. Anh có tầm nhìn xa và khả năng biến ước mơ lớn thành hiện thực.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="text-xl font-bold text-amber-800">Nhân Cách 8: Người Lãnh Đạo</h3>
+                    <p class="mt-2 text-stone-600">Anh tạo ấn tượng về một người mạnh mẽ, quyết đoán, có năng lực và đáng tin cậy. Mọi người nhìn thấy ở anh sự tự tin và khả năng kiểm soát tình huống hiệu quả. Điều này củng cố vai trò trụ cột trong gia đình và sự nghiệp.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                    <h3 class="text-xl font-bold text-amber-800">Sứ Mệnh 3: Người Truyền Cảm Hứng</h3>
+                    <p class="mt-2 text-stone-600">Nhiệm vụ cuộc đời của anh là dùng sự lạc quan, sáng tạo và khả năng giao tiếp để mang lại niềm vui, năng lượng tích cực cho những người xung quanh, đặc biệt là trong chính gia đình mình.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-stone-800">Sự Giao Thoa 8 & 3: Cân Bằng Giữa Trách Nhiệm và Niềm Vui</h3>
+                <p class="mt-2 text-stone-600">Đây không phải là mâu thuẫn, mà là sự bổ sung hoàn hảo. Vũ trụ giao cho anh nhiệm vụ không chỉ xây dựng một "đế chế" vật chất vững chắc (năng lượng số 8), mà còn phải thổi hồn vào đó bằng niềm vui, tiếng cười và sự kết nối ấm áp (năng lượng số 3). Sứ mệnh của anh là trở thành một người cha, người con không chỉ được kính trọng vì tài năng, mà còn được yêu mến vì sự ấm áp và khả năng truyền cảm hứng.</p>
+            </div>
+        </section>
+
+        <!-- Section: Roadmap -->
+        <section id="roadmap" class="hidden space-y-8">
+            <h2 class="text-3xl font-bold text-center text-stone-900">Lộ Trình Cuộc Đời: Các Giai Đoạn Trọng Yếu</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto">Thần số học cung cấp một cái nhìn về các giai đoạn phát triển chính và dòng chảy năng lượng qua từng năm, giúp anh đưa ra những quyết định phù hợp.</p>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-center mb-8 text-stone-800">Bốn Đỉnh Cao Cuộc Đời</h3>
+                <div class="relative timeline">
+                    <div class="timeline-item mb-12 clearfix">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content bg-stone-50 p-4 rounded-lg border">
+                            <h4 class="font-bold text-lg text-amber-800">Đỉnh 1: 28 tuổi - Số 8</h4>
+                            <p class="text-sm text-stone-600">Giai đoạn khẳng định năng lực, xây dựng nền tảng sự nghiệp và tài chính. Bài học về việc sử dụng quyền lực và trách nhiệm.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item mb-12 clearfix">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content bg-stone-50 p-4 rounded-lg border">
+                            <h4 class="font-bold text-lg text-amber-800">Đỉnh 2: 37 tuổi - Số 7</h4>
+                            <p class="text-sm text-stone-600">Giai đoạn của sự chiêm nghiệm, học hỏi sâu sắc từ trải nghiệm, trưởng thành hơn về nội tâm và trí tuệ. Đây là cơ hội vàng để bù đắp Mũi tên trống.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item mb-12 clearfix">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content bg-stone-50 p-4 rounded-lg border">
+                            <h4 class="font-bold text-lg text-amber-800">Đỉnh 3: 46 tuổi - Số 6</h4>
+                            <p class="text-sm text-stone-600">Giai đoạn đỉnh cao của trách nhiệm gia đình. Thời điểm lý tưởng để vun đắp tổ ấm và tận hưởng hạnh phúc viên mãn.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item clearfix">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content bg-stone-50 p-4 rounded-lg border">
+                            <h4 class="font-bold text-lg text-amber-800">Đỉnh 4: 55 tuổi - Số 10</h4>
+                            <p class="text-sm text-stone-600">Giai đoạn gặt hái thành quả, đạt được sự công nhận và bắt đầu một chương mới với nhiều thay đổi tích cực, linh hoạt.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                <h3 class="text-2xl font-bold text-center mb-6 text-stone-800">Dòng Chảy Năng Lượng Gần Đây</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="bg-stone-50 p-4 rounded-lg border">
+                        <p class="font-semibold text-stone-500">Năm 2024</p>
+                        <p class="text-4xl font-bold text-amber-700 my-2">Năm Cá Nhân 7</p>
+                        <p class="text-sm text-stone-600">Thời điểm để học hỏi, chiêm nghiệm, phát triển nội tâm và kết nối sâu sắc hơn với bản thân.</p>
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                        <p class="font-semibold text-stone-500">Năm 2025</p>
+                        <p class="text-4xl font-bold text-amber-700 my-2">Năm Cá Nhân 8</p>
+                        <p class="text-sm text-stone-600">Thời điểm để gặt hái thành công về tài chính và sự nghiệp, củng cố nền tảng vật chất cho gia đình.</p>
+                    </div>
+                    <div class="bg-stone-50 p-4 rounded-lg border">
+                        <p class="font-semibold text-stone-500">Năm 2026</p>
+                        <p class="text-4xl font-bold text-amber-700 my-2">Năm Cá Nhân 9</p>
+                        <p class="text-sm text-stone-600">Năm của sự hoàn tất, tổng kết, buông bỏ những điều cũ để chuẩn bị cho một chu kỳ 9 năm mới.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Action Plan -->
+        <section id="action-plan" class="hidden space-y-8">
+            <h2 class="text-3xl font-bold text-center text-stone-900">Lộ Trình Hành Động Cá Nhân Hóa</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto">Đây là những chiến lược cụ thể để anh vận dụng sức mạnh các con số, vượt qua thách thức và thực hiện trọn vẹn sứ mệnh của mình.</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 space-y-4">
+                    <h3 class="text-xl font-bold text-amber-800">Để "Báo Hiếu Cha Mẹ"</h3>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Vận dụng năng lượng số 8 (Vật chất):</h4>
+                        <p class="text-stone-600">Tiếp tục phát huy năng lực tài chính để đảm bảo cho cha mẹ một cuộc sống an nhàn, đầy đủ. Đây là cách thể hiện trách nhiệm của người con trụ cột.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Kích hoạt năng lượng số 3 (Tinh thần):</h4>
+                        <p class="text-stone-600">Dành thời gian chất lượng để trò chuyện, lắng nghe và mang lại tiếng cười cho cha mẹ. Sự hiện diện và niềm vui anh mang lại là món quà quý giá nhất.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 space-y-4">
+                    <h3 class="text-xl font-bold text-amber-800">Để "Nuôi Dạy Con Cái"</h3>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Phát huy Linh hồn 22/4 (Kiến tạo):</h4>
+                        <p class="text-stone-600">Xem việc nuôi dạy con là dự án vĩ đại nhất, xây dựng cho con một môi trường phát triển toàn diện về trí tuệ, thể chất, cảm xúc và tinh thần.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Cân bằng 8 (Kỷ luật) & 3 (Niềm vui):</h4>
+                        <p class="text-stone-600">Vừa là người cha nghiêm khắc, dạy con về trách nhiệm (số 8), vừa là người bạn lớn, cùng con khám phá và chơi đùa (số 3). Tránh áp đặt, kiểm soát quá mức.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 space-y-4">
+                    <h3 class="text-xl font-bold text-amber-800">Để "Phát Triển Bản Thân"</h3>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Chuyển hóa Mũi tên trống 3-5-7:</h4>
+                        <p class="text-stone-600">Đây là chìa khóa! Chủ động học các kỹ năng giao tiếp (bù số 3), biểu đạt tình yêu thương trực tiếp (bù số 5), và dành thời gian chiêm nghiệm, xây dựng niềm tin (bù số 7).</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-stone-700">Hành động cụ thể:</h4>
+                        <p class="text-stone-600">Dành 15 phút mỗi ngày đọc sách, tham gia một khóa học sáng tạo, thực hành nói lời yêu thương với gia đình. Hãy bắt đầu từ những việc nhỏ nhất.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 mt-8 border-t border-stone-200">
+        <p class="text-stone-500">Chúc anh vững bước trên hành trình đầy ý nghĩa của mình.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navigation = document.getElementById('navigation');
+            const sections = document.querySelectorAll('main section');
+            const navButtons = navigation.querySelectorAll('.nav-button');
+
+            const birthChartCells = document.querySelectorAll('.birth-chart-cell');
+            const birthChartInfoTitle = document.getElementById('birth-chart-info-title');
+            const birthChartInfoText = document.getElementById('birth-chart-info-text');
+
+            const birthChartData = {
+                '111': {
+                    title: 'Ba số 1 (111): Nội tâm phong phú',
+                    text: 'Anh có một thế giới nội tâm sâu sắc. Tuy nhiên, điều này có thể biểu hiện ra ngoài theo hai hướng: hoặc rất hoạt ngôn, hoặc khá trầm lặng, khó bộc lộ cảm xúc. Việc nhận diện và rèn luyện cách thể hiện sẽ giúp anh kết nối tốt hơn với gia đình.'
+                },
+                '6': {
+                    title: 'Một số 6: Trách nhiệm gia đình',
+                    text: 'Số 6 là con số của tình yêu thương và trách nhiệm với gia đình. Sự hiện diện của nó là nguồn năng lượng hỗ trợ trực tiếp và mạnh mẽ cho mục tiêu chăm sóc tổ ấm của anh.'
+                },
+                '8': {
+                    title: 'Một số 8: Trí tuệ & Độc lập',
+                    text: 'Con số này củng cố thêm cho Con Số Chủ Đạo 8, mang lại cho anh sự năng động, độc lập và nhạy bén trong việc giải quyết các vấn đề thực tế trong cuộc sống.'
+                },
+                '99': {
+                    title: 'Hai số 9 (99): Hoài bão & Lý tưởng',
+                    text: 'Anh là người đặt ra những tiêu chuẩn rất cao cho bản thân trong việc thực hiện sứ mệnh. Anh có tham vọng lớn và ý thức trách nhiệm sâu sắc đối với gia đình và xã hội.'
+                },
+                '3-5-7': {
+                    title: 'Mũi tên trống 3-5-7: Mũi tên Hoài nghi',
+                    text: 'Đây là thách thức và bài học lớn nhất. Sự thiếu vắng các số 3, 5, 7 tạo ra khuynh hướng hoài nghi, chỉ tin vào logic. Bài học của anh là vun đắp niềm tin, sự thấu cảm và kết nối sâu sắc về tâm hồn để hoàn thiện vai trò người cha, người con.'
+                }
+            };
+            
+            function showSection(targetId) {
+                sections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                });
+
+                navButtons.forEach(button => {
+                    if (button.dataset.target === targetId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+            }
+            
+            navigation.addEventListener('click', function(e) {
+                if (e.target.matches('.nav-button')) {
+                    const targetId = e.target.dataset.target;
+                    showSection(targetId);
+                    const targetSection = document.getElementById(targetId);
+                    if(targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+
+            birthChartCells.forEach(cell => {
+                cell.addEventListener('click', function() {
+                    if(this.classList.contains('empty')) {
+                        const info = birthChartData['3-5-7'];
+                        birthChartInfoTitle.textContent = info.title;
+                        birthChartInfoText.textContent = info.text;
+                        birthChartCells.forEach(c => c.classList.remove('selected'));
+                        return;
+                    };
+
+                    const numberKey = this.dataset.number;
+                    const info = birthChartData[numberKey];
+
+                    if (info) {
+                        birthChartInfoTitle.textContent = info.title;
+                        birthChartInfoText.textContent = info.text;
+                        birthChartCells.forEach(c => c.classList.remove('selected'));
+                        this.classList.add('selected');
+                    }
+                });
+            });
+
+            const ctx = document.getElementById('energyBalanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        'Năng lực Vật chất (Số 8)',
+                        'Trách nhiệm Gia đình (Số 6)',
+                        'Hoài bão & Lý tưởng (Số 9)',
+                        'Sáng tạo & Giao tiếp (Sứ mệnh 3)',
+                        'Kết nối Nội tâm (Thiếu 3,5,7)'
+                    ],
+                    datasets: [{
+                        label: 'Mức độ Năng lượng',
+                        data: [9, 8, 8, 6, 3],
+                        backgroundColor: 'rgba(217, 119, 6, 0.2)',
+                        borderColor: 'rgba(217, 119, 6, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(217, 119, 6, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(217, 119, 6, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: '#d6d3d1'
+                            },
+                            grid: {
+                                color: '#e7e5e4'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                color: '#57534e'
+                            },
+                            ticks: {
+                                backdropColor: 'rgba(245, 245, 244, 0.75)',
+                                color: '#78716c',
+                                stepSize: 2
+                            },
+                            min: 0,
+                            max: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r + '/10';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
